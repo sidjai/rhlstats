@@ -1,7 +1,8 @@
-getHlPage <- function(
+getHlServerPage <- function(
 	pathServer,
 	boxName = "//S",
-	type = c("header", "table")[1]
+	type = c("header", "table")[1],
+	shOnlyNodes = FALSE
 	){
 
 
@@ -19,14 +20,30 @@ getHlPage <- function(
 	goodXLoc <- sprintf(
 		"//*[@id='accordion']/tr[%d]", wantInd)
 	goodNodes <- rvest::html_nodes(page, xpath = goodXLoc)
-	return(goodNodes)
+
+	if(shOnlyNodes){
+		return(goodNodes)
+	} else {
+		res <- switch(type,
+			header = getSeverInfo(goodNodes),
+			table = getServerTable(goodNodes))
+		return(res)
+	}
+
 }
 
 getSeverInfo <- function(hlpage){
+	nodes <- rvest::html_nodes(hlpage,
+		xpath = "td[contains(@class, 'game-table-cell')]")
+	text <- html_text(nodes)
+	text <- gsub("\\(join\\)", "", gsub("\n", "", text))
 
-
+	return(text)
 }
 
 getServerTable <-function(hlpage){
-	xloc <- '//*[@id="accordion"]/tbody/tr[contains(@class, "game-table-row toggler")]'
+	res <- rvest::html_table(
+		rvest::html_node(hlpage, xpath = "td[1]/div[1]/table[1]"),
+		header = TRUE)[[1]]
+	return(res)
 }
