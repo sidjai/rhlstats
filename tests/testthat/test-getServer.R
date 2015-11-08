@@ -31,3 +31,15 @@ test_that("Recognize server gives right data.table",{
 	expect_true(grepl("data.frame", class(hlnode)))
 
 })
+
+
+test_that("Get top players", {
+	hltable <- getHlTopPlayers(statsServer)
+	expect_true(grepl("data.frame", class(hltable)))
+	expect_equal(dim(hltable)[1], 50)
+	hltable <- getHlTopPlayers(statsServer, 100)
+	expect_equal(dim(hltable)[1], 100)
+
+	hlids <- getHlTopPlayers(statsServer, shJustIds = TRUE)
+	expect_true(grepl("integer", class(hlids)))
+})
