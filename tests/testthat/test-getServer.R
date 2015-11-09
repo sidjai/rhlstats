@@ -40,6 +40,10 @@ test_that("Get top players", {
 	hltable <- getHlTopPlayers(statsServer, 100)
 	expect_equal(dim(hltable)[1], 100)
 
+	for(col in 1:dim(hltable)[2]){
+		expect_true(all(!is.na(hltable[,col])))
+	}
+
 	hlids <- getHlTopPlayers(statsServer, shJustIds = TRUE)
 	expect_true(grepl("integer", class(hlids)))
 })

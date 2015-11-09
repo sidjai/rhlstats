@@ -94,16 +94,7 @@ getHlTopPlayers <- function(
 			act <- gsub("width|%|:|;", "", act)
 			tab$Activity <- as.integer(act)
 
-			timeSplit <- strsplit(tab$Connection, "d")
-			days <- vapply(timeSplit, function(sin){
-				as.integer(sin[1])
-			}, 1)
-
-			hours <- vapply(timeSplit, function(sin){
-				badStr <- strsplit(sin[2], ":")[[1]][1]
-				as.integer(substr(badStr, 2,nchar(badStr)))
-			}, 1)
-			tab[, "Connection Time"] <- (days * 24 + hours)
+			tab[, "Connection Time"] <- parseHlTime(tab[, "Connection Time"])
 
 
 			#Points has an extra character at the end that can't be regexed out
@@ -113,8 +104,7 @@ getHlTopPlayers <- function(
 			easyStrSet <- c("Points", "Kills", "Deaths", "Headshots", "Accuracy")
 			for (col in easyStrSet){
 				goodVec <- as.integer(gsub("%|,", "", tab[,col]))
-				if(col ==
-						"Accuracy"){
+				if(col == "Accuracy"){
 					tab[, col] <- as.double(goodVec)/100
 				} else {
 					tab[, col] <- as.integer(goodVec)
@@ -129,6 +119,43 @@ getHlTopPlayers <- function(
 	if(shJustIds) playerTable <- as.vector(playerTable)
 
 	return(playerTable)
+
+
+
+}
+
+parseHlTime <- function(din){
+
+	timeSplit <- strsplit(din, "d\\S")
+	days <- vapply(timeSplit, function(sin){
+		as.integer(sin[1])
+	}, 1)
+
+	hours <- vapply(timeSplit, function(sin){
+		diffTT <- as.difftime(sin[2], format = " %H:%M:%Sh", units = "hours")
+		as.numeric(diffTT)
+	}, 1.1)
+
+	return((days * 24) + hours)
+}
+
+getSessionTimes <- function(pathServer, playerId){
+
+	url <- paste0(
+		pathServer,
+		"/stats/hlstats.php?mode=playersessions&player=",
+		playerId)
+
+	hlpage <- xml2::read_html(url)
+
+	tablexloc <- "//div[2]/div[1]/div[2]/table"
+	tableNode <- rvest::html_node(hlpage, xpath = tablexloc)
+	tab <- rawTab <- rvest::html_table(
+		tableNode,
+		header = TRUE)
+
+
+
 
 
 
