@@ -96,10 +96,7 @@ getHlTopPlayers <- function(
 
 			tab[, "Connection Time"] <- parseHlTime(tab[, "Connection Time"])
 
-
-			#Points has an extra character at the end that can't be regexed out
-			colnames(tab)[3] <- "Points"
-			tab[, "Points"] <- substr(tab[, "Points"], 1, nchar(tab[, "Points"]) - 1)
+			tab <- getRidOfBadChar(tab)
 
 			easyStrSet <- c("Points", "Kills", "Deaths", "Headshots", "Accuracy")
 			for (col in easyStrSet){
@@ -148,15 +145,41 @@ getSessionTimes <- function(pathServer, playerId){
 
 	hlpage <- xml2::read_html(url)
 
-	tablexloc <- "//div[2]/div[1]/div[2]/table"
+	tablexloc <- "//div[contains(@class,'content')]/div[1]/div[1]/table"
 	tableNode <- rvest::html_node(hlpage, xpath = tablexloc)
 	tab <- rawTab <- rvest::html_table(
 		tableNode,
 		header = TRUE)
 
+	tab <- getRidOfBadChar(tab)
+	tab <- getRidOfBadChar(tab, addBadChar = ",", outClass = "integer")
 
+	tab$Time <- parseHlTime(tab$Time)
+	tab$Date <- strptime(tab$Date, "%Y-%m-%d")
+	tab$`Skill Change` <- as.integer(tab$`Skill Change`)
 
+	return(tab)
 
+}
 
+getRidOfBadChar <- function(
+	tab,
+	addBadChar = NULL,
+	outClass = c("character", "numeric", "integer")[1]
+	){
 
+	badCharRegEx <- paste(c(" ", addBadChar), collapse = "|")
+
+	badHead <- grepl(badCharRegEx, colnames(tab))
+	badTab <- vapply(tab, function(col){ any(grepl(badCharRegEx, col)) }, TRUE)
+	for(ind in which(badHead | badTab)){
+		colnames(tab)[ind] <- gsub(badCharRegEx, "", colnames(tab)[ind])
+		goodChs <- gsub(badCharRegEx, "", tab[, ind])
+		tab[, ind] <- switch(outClass,
+			character = goodChs,
+			numeric = as.numeric(goodChs),
+			integer = as.integer(goodChs)
+		)
+	}
+	return(tab)
 }
