@@ -1,3 +1,12 @@
+#' Driver to scrape the hlstats main pages
+#'
+#' @param pathServer The url to the main hlstats page
+#' @param boxName The name of the area that you want to capture
+#' @param type regex of the box that you want captured
+#' @param shOnlyNodes Return the xml nodes or the tables
+#'
+#' @return Either the xml nodes or a string matrix of the table
+#' @export
 getHlServerPage <- function(
 	pathServer,
 	boxName = "//S",
@@ -45,9 +54,19 @@ getServerTable <-function(hlpage){
 	res <- rvest::html_table(
 		rvest::html_node(hlpage, xpath = "td[1]/div[1]/table[1]"),
 		header = TRUE)[[1]]
+	res <- getRidOfBadChar(res)
 	return(res)
 }
 
+#' Grab the top player lists for the first server
+#'
+#' @param pathServer The url to the main hlstats page
+#' @param numPlayers The number of players to download(grabs in 50 player pages)
+#' @param rankingType What type of ranking should the server output
+#' @param shJustIds Give only the player ids of the players
+#'
+#' @return A dataframe of the final table or a vector of the player Ids
+#' @export
 getHlTopPlayers <- function(
 	pathServer,
 	numPlayers = 50,
@@ -57,7 +76,7 @@ getHlTopPlayers <- function(
 
 	rankInd <- switch(rankingType, Total = 0, Week = -1, Month = -2)
 
-	playerList <- lapply(1:floor(numPlayers/50), function(pg){
+	playerList <- lapply(1:ceiling(numPlayers/50), function(pg){
 		url <- sprintf(
 			"%s/stats/hlstats.php?mode=players&game=tf&rank_type=%d&page=%d",
 			pathServer,

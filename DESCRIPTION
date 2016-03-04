@@ -10,6 +10,8 @@ Description: More details about what the package does. See
            for details on how to write this part.
 License: GPL (>= 2)
 Suggests: testthat
-Imports:
+Imports: 
   rvest,
-  xml2
+  xml2,
+    Rcpp
+LinkingTo: Rcpp
