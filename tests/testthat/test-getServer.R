@@ -47,3 +47,9 @@ test_that("Get top players", {
 	hlids <- getHlTopPlayers(statsServer, shJustIds = TRUE)
 	expect_true(grepl("integer", class(hlids)))
 })
+
+test_that("Session does dead players right", {
+	timeDat <- getSessionTimes(statsServer, 24859)
+	expect_true(is.data.frame(timeDat))
+
+})

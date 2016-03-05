@@ -164,18 +164,26 @@ getSessionTimes <- function(pathServer, playerId){
 
 	hlpage <- xml2::read_html(url)
 
-	tablexloc <- "//div[contains(@class,'content')]/div[1]/div[1]/table"
-	tableNode <- rvest::html_node(hlpage, xpath = tablexloc)
-	tab <- rawTab <- rvest::html_table(
-		tableNode,
-		header = TRUE)
+	checkxloc <- "//div[contains(@class,'content')]/div[1]/div[1]"
+	checkNode <- rvest::html_node(hlpage, xpath = checkxloc)
 
-	tab <- getRidOfBadChar(tab)
-	tab <- getRidOfBadChar(tab, addBadChar = ",", outClass = "integer")
+	if(length(rvest::html_attrs(checkNode)) == 1){
+		tab <- as.data.frame(matrix(0,nrow = 0, ncol = 5))
 
-	tab$Time <- parseHlTime(tab$Time)
-	tab$Date <- strptime(tab$Date, "%Y-%m-%d")
-	tab$`Skill Change` <- as.integer(tab$`Skill Change`)
+	} else {
+
+		tableNode <- rvest::html_node(hlpage, xpath = "/table")
+		tab <- rawTab <- rvest::html_table(
+			tableNode,
+			header = TRUE)
+
+		tab <- getRidOfBadChar(tab)
+		tab <- getRidOfBadChar(tab, addBadChar = ",", outClass = "integer")
+
+		tab$Time <- parseHlTime(tab$Time)
+		tab$Date <- strptime(tab$Date, "%Y-%m-%d")
+		tab$`Skill Change` <- as.integer(tab$`Skill Change`)
+	}
 
 	return(tab)
 
