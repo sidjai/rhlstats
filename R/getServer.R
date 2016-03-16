@@ -9,7 +9,7 @@
 #' @export
 getHlServerPage <- function(
 	pathServer,
-	boxName = "//S",
+	boxName = "\\S",
 	type = c("header", "table")[1],
 	shOnlyNodes = FALSE
 	){
@@ -34,14 +34,14 @@ getHlServerPage <- function(
 		return(goodNodes)
 	} else {
 		res <- switch(type,
-			header = getSeverInfo(goodNodes),
+			header = getServerInfo(goodNodes),
 			table = getServerTable(goodNodes))
 		return(res)
 	}
 
 }
 
-getSeverInfo <- function(hlpage){
+getServerInfo <- function(hlpage){
 	nodes <- rvest::html_nodes(hlpage,
 		xpath = "td[contains(@class, 'game-table-cell')]")
 	text <- html_text(nodes)
@@ -172,7 +172,7 @@ getSessionTimes <- function(pathServer, playerId){
 
 	} else {
 
-		tableNode <- rvest::html_node(hlpage, xpath = "/table")
+		tableNode <- rvest::html_node(checkNode, xpath = "table")
 		tab <- rawTab <- rvest::html_table(
 			tableNode,
 			header = TRUE)

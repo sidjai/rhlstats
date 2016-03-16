@@ -5,6 +5,32 @@
 
 using namespace Rcpp;
 
+// cppCalcTryHard
+NumericVector cppCalcTryHard(NumericVector points, NumericVector delPoints, NumericVector tendtryHard);
+RcppExport SEXP rhlstats_cppCalcTryHard(SEXP pointsSEXP, SEXP delPointsSEXP, SEXP tendtryHardSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type points(pointsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type delPoints(delPointsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type tendtryHard(tendtryHardSEXP);
+    __result = Rcpp::wrap(cppCalcTryHard(points, delPoints, tendtryHard));
+    return __result;
+END_RCPP
+}
+// cppCalcLifeTime
+NumericVector cppCalcLifeTime(NumericVector uptimes, NumericVector dailyTend, NumericVector uptimeTend);
+RcppExport SEXP rhlstats_cppCalcLifeTime(SEXP uptimesSEXP, SEXP dailyTendSEXP, SEXP uptimeTendSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type uptimes(uptimesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dailyTend(dailyTendSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type uptimeTend(uptimeTendSEXP);
+    __result = Rcpp::wrap(cppCalcLifeTime(uptimes, dailyTend, uptimeTend));
+    return __result;
+END_RCPP
+}
 // cppCalcPlayerTendencies
 NumericVector cppCalcPlayerTendencies(NumericVector a, NumericVector b, NumericVector c);
 RcppExport SEXP rhlstats_cppCalcPlayerTendencies(SEXP aSEXP, SEXP bSEXP, SEXP cSEXP) {
