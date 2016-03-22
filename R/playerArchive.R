@@ -26,8 +26,14 @@ buildPlayerArchive <- function(pathServer, pathArch, shSaveSess = FALSE){
 		RSQLite::dbDisconnect(sessDb)
 	}
 
+	tend <- t(vapply(tab[ ,"playerid"], function(pid){
+		model <- calcPlayerTendencies(sessInfo[[pid]])
+		return(c(model2str(model$life), model2str(model$try)))
+	}, rep("wer", 2)))
 
-	tend <- calcPlayerTendencies(sessInfo)
+	tab <- cbind(tab, model2str(tend))
+	colnames(tab) <- c(gsub(c(" ", ":"), ".", colnames(tab)),
+		"Model.Lifetime", "Model.Tryhard")
 
 	if(file.exists(pathArch)){
 		stop(paste(pathArch, "is already an sql database, use updatePlayerArchive"))
@@ -44,6 +50,10 @@ buildPlayerArchive <- function(pathServer, pathArch, shSaveSess = FALSE){
 
 updatePlayerArchive <- function(pathServer, pathArch){
 
+	#eval(parse(text = tab$modelStr))
+	#update(model)
+	#tab$modelStr <- model2str(model)
+
 
 }
 
@@ -58,27 +68,18 @@ queryPlayerArchive <- function(currentTab, pathArch){
 	topArch <- RSQLite::dbGetQuery(db, sqlQuery)
 
 	topArch <- sqldb(pathArch)[currentTab$playerIds, ]
-	tryhard <- cppCalcTryHard(
-		currentTab$points,
-		currentTab$`Current Skill`,
-		topArch$tryhard)
 
-	lifetime <-cppCalcLifeTime(
-		currentTab$Time,
-		tend$dailyTend,
-		tend$timeTend)
+	lifetime <- vapply(topArch$Model.Lifetime, function(modtxt){
+		eval(parse(text = modtxt))
+		predict(model, as.integer(Sys.time()))
+		})
+
+	tryhard <- vapply(topArch$Model.Tryhard, function(modtxt){
+		eval(parse(text = modtxt))
+		predict(model, as.integer(Sys.time()))
+		})
+
 
 	out <- list(tryhard = tryhard, lifetime = lifetime)
 	return(out)
-}
-
-calcPlayerTendencies <- function(sessInfo){
-
-
-
-	#colnames(tend) <- c("tryHardTend", "dailyTend", "uptimeTend")
-
-
-
-
 }
