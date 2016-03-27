@@ -5,12 +5,18 @@ Version: 0.1.0
 Date: 2015-11-03
 Author: Siddarta Jairam
 Maintainer: Siddarta Jairam <sidjsb@gmail.com>
-Description: HLStatsX servers meticulous track usage rates in a number of categories. To see the health of a server, these stats should be easily downloaded and analyzed. This package sets up an archive for this data and does some further statistics on how each player uses the server. This culminates with a measure of how alive the server is at the moment and over a certain time period with "lifetime" and "tryhard".
+Description: HLStatsX servers meticulous track usage rates in a number of
+    categories. To see the health of a server, these stats should be easily
+    downloaded and analyzed. This package sets up an archive for this data and does
+    some further statistics on how each player uses the server. This culminates
+    with a measure of how alive the server is at the moment and over a certain time
+    period with "lifetime" and "tryhard".
 License: GPL (>= 2)
-Suggests: testthat
+Suggests:
+    testthat
 Imports:
-  rvest,
-  xml2,
-  Rcpp,
-  RSQLite
-LinkingTo: Rcpp
+    rvest,
+    xml2,
+    RSQLite,
+    xts
+RoxygenNote: 5.0.1

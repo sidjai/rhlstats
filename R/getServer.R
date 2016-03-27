@@ -44,7 +44,7 @@ getHlServerPage <- function(
 getServerInfo <- function(hlpage){
 	nodes <- rvest::html_nodes(hlpage,
 		xpath = "td[contains(@class, 'game-table-cell')]")
-	text <- html_text(nodes)
+	text <- rvest::html_text(nodes)
 	text <- gsub("\\(join\\)", "", gsub("\n", "", text))
 
 	return(text)
@@ -106,6 +106,7 @@ getHlTopPlayers <- function(
 		} else {
 			tab$Rank <- ids
 			colnames(tab)[1] <- "playerid"
+			colnames(tab) <- gsub(" |:", ".", colnames(tab))
 
 			actxloc <- "tr[not(contains(@class,'data-table-head'))]/td[4]/img"
 			actNodes <- rvest::html_nodes(tableNode, xpath = actxloc)
@@ -113,7 +114,7 @@ getHlTopPlayers <- function(
 			act <- gsub("width|%|:|;", "", act)
 			tab$Activity <- as.integer(act)
 
-			tab[, "Connection Time"] <- parseHlTime(tab[, "Connection Time"])
+			tab[, "Connection.Time"] <- parseHlTime(tab[, "Connection.Time"])
 
 			tab <- getRidOfBadChar(tab)
 
@@ -155,7 +156,24 @@ parseHlTime <- function(din){
 	return((days * 24) + hours)
 }
 
-getSessionTimes <- function(pathServer, playerId){
+#' Parse the data on each players per login stats for usage statistics
+#'
+#' @param pathServer The url to the main hlstats page
+#' @param playerId The player's id
+#' @param verbose Which columns to return as follows:
+#' \describe{
+#'   \item{all}{All the columns}
+#'   \item{min}{Only returns the date, time and skill change}
+#'   \item{onlyDate}{Only returns the date}
+#' }
+#'
+#' @return data frame of the last sessions for the player
+#' @export
+getSessionTimes <- function(
+	pathServer,
+	playerId,
+	verbose = c("all", "min", "onlyDate")[1]
+	){
 
 	url <- paste0(
 		pathServer,
@@ -177,12 +195,22 @@ getSessionTimes <- function(pathServer, playerId){
 			tableNode,
 			header = TRUE)
 
+		colnames(tab) <- gsub(" |:", ".", colnames(tab))
+
 		tab <- getRidOfBadChar(tab)
 		tab <- getRidOfBadChar(tab, addBadChar = ",", outClass = "integer")
 
 		tab$Time <- parseHlTime(tab$Time)
 		tab$Date <- strptime(tab$Date, "%Y-%m-%d")
-		tab$`Skill Change` <- as.integer(tab$`Skill Change`)
+		tab$Skill.Change <- as.integer(tab$Skill.Change)
+
+		colnames(tab) <- gsub(" |:", ".", colnames(tab))
+
+		tab <- switch(verbose,
+			onlyDate = tab[, "Date"],
+			min = tab[, c("Date", "Skill.Change", "Time")],
+			all = tab
+		)
 	}
 
 	return(tab)

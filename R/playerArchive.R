@@ -1,46 +1,47 @@
-buildPlayerArchive <- function(pathServer, pathArch, shSaveSess = FALSE){
+buildPlayerArchive <- function(pathServer, pathArch){
 
 	check <- length(getHlServerPage(pathServer, shOnlyNodes = TRUE)) > 0
 	if(!check) stop(paste(
 		"The server: ", pathServer, "is not a valid hlstat server"
 		))
 
-
-
-
-	tab <- getHlTopPlayers(pathServer, 200)
-
-	sessInfo <- lapply(tab[ ,"playerid"], function(x){
-		getSessionTimes(pathServer, x)
-	})
-	sessArch <- gsub("[.]sql", "sess.sql", pathArch)
-
-	if(shSaveSess){
-		sessDb <- RSQLite::dbConnect(RSQLite::SQLite(), sessArch)
-		for( pind in 1:200){
-			temp <- sessInfo[[pind]]
-			temp$Date <- as.character(temp$Date)
-			RSQLite::dbWriteTable(sessDb, paste0("p", tab[pind, "playerid"]),
-				temp)
-		}
-		RSQLite::dbDisconnect(sessDb)
-	}
-
-	tend <- t(vapply(tab[ ,"playerid"], function(pid){
-		model <- calcPlayerTendencies(sessInfo[[pid]])
-		return(c(model2str(model$life), model2str(model$try)))
-	}, rep("wer", 2)))
-
-	tab <- cbind(tab, model2str(tend))
-	colnames(tab) <- c(gsub(c(" ", ":"), ".", colnames(tab)),
-		"Model.Lifetime", "Model.Tryhard")
-
 	if(file.exists(pathArch)){
 		stop(paste(pathArch, "is already an sql database, use updatePlayerArchive"))
 	}
 
+
+	tab <- getHlTopPlayers(pathServer, 200)
+
+
+	#Get session info for every player
+
+	sessInfo <- lapply(tab[ ,"playerid"], function(x){
+		sess <- getSessionTimes(pathServer, x, verbose = "min")
+		sess <- cbind(rep(x, nrow(sess)), sess)
+		sess$Date <- as.character(sess$Date)
+		return(sess)
+	})
+
+	sessTab <- do.call("rbind", sessInfo)
+	names(sessInfo) <- tab[ ,"playerid"]
+	colnames(sessTab)[1] <- "playerid"
+
+
+	#Add models to player archive
+
+	tend <- t(vapply(tab[ ,"playerid"], function(pid){
+		model <- calcPlayerTendencies(sessInfo[[paste(pid)]])
+		return(c(model2str(model$life), model2str(model$try)))
+	}, rep("wer", 2)))
+
+	tab <- cbind(tab, tend)
+	colnames(tab)[ncol(tab)-1] <- "Model.Lifetime"
+	colnames(tab)[ncol(tab)] <- "Model.Tryhard"
+
+
 	db <- RSQLite::dbConnect(RSQLite::SQLite(), pathArch)
 	RSQLite::dbWriteTable(db, "players", tab)
+	RSQLite::dbWriteTable(db, "session", sessTab)
 
 
 	return(RSQLite::dbDisconnect(db))
@@ -48,11 +49,17 @@ buildPlayerArchive <- function(pathServer, pathArch, shSaveSess = FALSE){
 }
 
 
-updatePlayerArchive <- function(pathServer, pathArch){
+updatePlayerArchive <- function(urlServer, pathArch){
 
-	#eval(parse(text = tab$modelStr))
-	#update(model)
-	#tab$modelStr <- model2str(model)
+
+
+	if(nzchar(pathSessArch)){
+		#eval(parse(text = tab$modelStr))
+		#update(model)
+		#tab$modelStr <- model2str(model)
+	}
+
+
 
 
 }
@@ -62,12 +69,12 @@ queryPlayerArchive <- function(currentTab, pathArch){
 		stop(paste(pathArch,
 			"does not exist, please build an archive using buildPlayerArchive"))
 	}
+	notSpecSet <- nzchar(currentTab$`#`)
 
 	db <- RSQLite::dbConnect(RSQLite::SQLite(), pathArch)
-	sqlQuery <- ""
+	sqlids <- paste("playerid=", currentTab$playerIds[notSpecSet], collapse = " OR ")
+	sqlQuery <- paste("SELECT * from players WHERE", sqlids)
 	topArch <- RSQLite::dbGetQuery(db, sqlQuery)
-
-	topArch <- sqldb(pathArch)[currentTab$playerIds, ]
 
 	lifetime <- vapply(topArch$Model.Lifetime, function(modtxt){
 		eval(parse(text = modtxt))
@@ -79,7 +86,7 @@ queryPlayerArchive <- function(currentTab, pathArch){
 		predict(model, as.integer(Sys.time()))
 		})
 
-
+	RSQLite::dbDisconnect(db)
 	out <- list(tryhard = tryhard, lifetime = lifetime)
 	return(out)
 }
