@@ -2,7 +2,7 @@ context("Interacting with the player archive")
 
 archLoc <- "/home/computer/Documents/rcode/critArchive.sql"
 load(system.file(package = "rhlstats",
-	"tests", "testthat", "mockServerTable.RData"))
+	"extdata", "mockServerTable.RData"))
 test_that("Archive can be queried",{
 
 	res <- queryPlayerArchive(mockTab, archLoc)

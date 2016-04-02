@@ -1,7 +1,5 @@
 context("Using Models")
 
-statsServer <- "http://slaybox.site.nfoservers.com"
-
 testSess <-
 	structure(list(Date = c("2016-03-06", "2016-03-01", "2016-02-29"
 	), Skill.Change = c(132L, 1167L, 879L), Points = c(19598L, 19466L,
@@ -12,6 +10,12 @@ testSess <-
 					"Skill.Change", "Points", "Time", "Kills", "Deaths", "K.D", "HS",
 					"HS.K", "Suicides", "TKs", "Kill.Strk"), row.names = c(NA, 3L
 					), class = "data.frame")
+
+testBadSess <-
+	structure(list(`rep(x, nrow(sess))` = integer(0), V1 = numeric(0),
+		V2 = numeric(0), V3 = numeric(0), V4 = numeric(0), V5 = numeric(0),
+		Date = character(0)), .Names = c("rep(x, nrow(sess))", "V1",
+			"V2", "V3", "V4", "V5", "Date"), row.names = integer(0), class = "data.frame")
 
 test_that("Model can be used directly",{
 	models <- calcPlayerTendencies(testSess)
@@ -27,6 +31,14 @@ test_that("Model can be converted to a string",{
 	eval(parse(text = resStr))
 
 	expect_equal(model, models$life)
+
+})
+
+test_that("Model does things with a dead player", {
+	models <- calcPlayerTendencies(testBadSess)
+	res <- predict(models$life)
+
+	expect_equal(names(res), c("pred", "se"))
 
 })
 

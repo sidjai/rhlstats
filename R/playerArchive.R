@@ -1,3 +1,13 @@
+#' Title Builds the usage stats database
+#'
+#' Driver that scrapes the session data and then builds the models for tryhard
+#'
+#' @param pathServer The url to the main hlstats page
+#' @param pathArch The path where the output sql database should be
+#'
+#' @return A logical if the sql was disconnected, side effect of writing the
+#'   database
+#' @export
 buildPlayerArchive <- function(pathServer, pathArch){
 
 	check <- length(getHlServerPage(pathServer, shOnlyNodes = TRUE)) > 0
@@ -64,6 +74,14 @@ updatePlayerArchive <- function(urlServer, pathArch){
 
 }
 
+#' Title Get the usage stats for a given table from the sql database
+#'
+#' @param currentTab Data.frame of the server page from getServerPage
+#' @param pathArch The path where the output sql database should be
+#'
+#' @return list with predictions for tryhard and lifetime for all the players in
+#'   the server
+#' @export
 queryPlayerArchive <- function(currentTab, pathArch){
 	if(!file.exists(pathArch)){
 		stop(paste(pathArch,
@@ -72,19 +90,19 @@ queryPlayerArchive <- function(currentTab, pathArch){
 	notSpecSet <- nzchar(currentTab$`#`)
 
 	db <- RSQLite::dbConnect(RSQLite::SQLite(), pathArch)
-	sqlids <- paste("playerid=", currentTab$playerIds[notSpecSet], collapse = " OR ")
+	sqlids <- paste("playerid=", currentTab[,"playerid"][notSpecSet], collapse = " OR ")
 	sqlQuery <- paste("SELECT * from players WHERE", sqlids)
 	topArch <- RSQLite::dbGetQuery(db, sqlQuery)
 
 	lifetime <- vapply(topArch$Model.Lifetime, function(modtxt){
 		eval(parse(text = modtxt))
 		predict(model, as.integer(Sys.time()))
-		})
+		}, 1)
 
 	tryhard <- vapply(topArch$Model.Tryhard, function(modtxt){
 		eval(parse(text = modtxt))
 		predict(model, as.integer(Sys.time()))
-		})
+		}, 1)
 
 	RSQLite::dbDisconnect(db)
 	out <- list(tryhard = tryhard, lifetime = lifetime)

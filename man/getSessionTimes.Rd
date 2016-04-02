@@ -19,6 +19,9 @@ getSessionTimes(pathServer, playerId, verbose = c("all", "min",
   \item{onlyDate}{Only returns the date}
 }}
 }
+\value{
+data frame of the last sessions for the player
+}
 \description{
 Parse the data on each players per login stats for usage statistics
 }

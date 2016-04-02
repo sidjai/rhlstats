@@ -14,9 +14,15 @@ getHlServerPage <- function(
 	shOnlyNodes = FALSE
 	){
 
+	url <- pathServer
+	if(!any(grepl("xml_document", class(page)))){
+		url <- paste0(pathServer, "/stats/hlstats.php")
+		page <- xml2::read_html(url)
+	} else {
+		page <- pathServer
+	}
 
-	url <- paste0(pathServer, "/stats/hlstats.php")
-	page <- xml2::read_html(url)
+
 	xloc <- paste0(
 		"//*[@id='accordion']/",
 		"tr[contains(@class, 'game-table-row toggler')]")
@@ -51,9 +57,15 @@ getServerInfo <- function(hlpage){
 }
 
 getServerTable <-function(hlpage){
-	res <- rvest::html_table(
-		rvest::html_node(hlpage, xpath = "td[1]/div[1]/table[1]"),
-		header = TRUE)[[1]]
+	nd <- rvest::html_node(hlpage, xpath = "td[1]/div[1]/table[1]")
+	res <- rvest::html_table(nd, header = TRUE)[[1]]
+	idnode <- rvest::html_nodes(hlpage, xpath = "td[1]/div[1]/table[1]/tr")
+
+	ids <- rep(NA, nrow(res))
+	ids[grepl("\\d", res[,1])] <- getPlayerIds(idnode)
+
+	res <- cbind(ids, res)
+	colnames(res)[1] <- "playerid"
 	res <- getRidOfBadChar(res)
 	return(res)
 }
@@ -91,13 +103,10 @@ getHlTopPlayers <- function(
 			tableNode,
 			header = TRUE)
 
+		simTableNode <- rvest::html_nodes(tableNode,
+			xpath = "tr[not(contains(@class,'data-table-head'))]")
 
-		idxloc <- "tr[not(contains(@class,'data-table-head'))]/td[2]/a"
-		idNodes <- rvest::html_nodes(tableNode, xpath = idxloc)
-		ids <- rvest::html_attr(idNodes, "href")
-
-		ids <- regmatches(ids, regexpr("player=(\\d+)", ids))
-		ids <- as.integer(gsub("player=", "", ids))
+		ids <- getPlayerIds(simTableNode)
 
 		if(shJustIds){
 			names(ids) <- tab$Player
@@ -108,8 +117,8 @@ getHlTopPlayers <- function(
 			colnames(tab)[1] <- "playerid"
 			colnames(tab) <- gsub(" |:", ".", colnames(tab))
 
-			actxloc <- "tr[not(contains(@class,'data-table-head'))]/td[4]/img"
-			actNodes <- rvest::html_nodes(tableNode, xpath = actxloc)
+			actxloc <- "td[4]/img"
+			actNodes <- rvest::html_nodes(simTableNode, xpath = actxloc)
 			act <- rvest::html_attr(actNodes, "style")
 			act <- gsub("width|%|:|;", "", act)
 			tab$Activity <- as.integer(act)
@@ -214,6 +223,19 @@ getSessionTimes <- function(
 	}
 
 	return(tab)
+
+}
+
+getPlayerIds <- function(tabNode){
+
+	idNodes <- rvest::html_nodes(tabNode, xpath = "td[2]/a")
+	ids <- rvest::html_attr(idNodes, "href")
+
+	ids <- regmatches(ids, regexpr("player=(\\d+)", ids))
+	ids <- as.integer(gsub("player=", "", ids))
+
+	return(ids)
+
 
 }
 
