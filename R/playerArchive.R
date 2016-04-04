@@ -90,21 +90,31 @@ queryPlayerArchive <- function(currentTab, pathArch){
 	notSpecSet <- nzchar(currentTab$`#`)
 
 	db <- RSQLite::dbConnect(RSQLite::SQLite(), pathArch)
-	sqlids <- paste("playerid=", currentTab[,"playerid"][notSpecSet], collapse = " OR ")
-	sqlQuery <- paste("SELECT * from players WHERE", sqlids)
-	topArch <- RSQLite::dbGetQuery(db, sqlQuery)
 
-	lifetime <- vapply(topArch$Model.Lifetime, function(modtxt){
-		eval(parse(text = modtxt))
-		predict(model, as.integer(Sys.time()))
-		}, 1)
+	topPlys <- RSQLite::dbGetQuery(db, "SELECT [playerid] from players")[,1]
+	isModellableSet <- currentTab[,"playerid"] %in% topPlys & notSpecSet
 
-	tryhard <- vapply(topArch$Model.Tryhard, function(modtxt){
-		eval(parse(text = modtxt))
-		predict(model, as.integer(Sys.time()))
-		}, 1)
+	prepQ <- "SELECT [%s] from players WHERE playerid=?"
+
+	out <- lapply(c("Lifetime", "Tryhard"), function(type){
+		modtxt <- RSQLite::dbGetPreparedQuery(db,
+			sprintf(prepQ, paste0("Model.", type)),
+			as.data.frame(currentTab[,"playerid"][isModellableSet]))
+		res <- vapply(modtxt[,1], useModelText, 1, USE.NAMES = FALSE)
+
+		comRes <- rep(NA, ncol(currentTab))
+		comRes[isModellableSet] <- res
+		return(comRes)
+	})
 
 	RSQLite::dbDisconnect(db)
-	out <- list(tryhard = tryhard, lifetime = lifetime)
 	return(out)
+}
+
+useModelText <- function(txt){
+
+	eval(parse(text = txt))
+	tsPred <- predict(model)$pred
+
+	return(rev(tsPred)[1])
 }

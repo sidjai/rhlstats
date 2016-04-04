@@ -7,7 +7,7 @@ test_that("Archive can be queried",{
 
 	res <- queryPlayerArchive(mockTab, archLoc)
 
-	expect_equal(class(res), "data.frame")
+	expect_equal(class(res), "list")
 
 })
 
