@@ -92,22 +92,35 @@ queryPlayerArchive <- function(currentTab, pathArch){
 	db <- RSQLite::dbConnect(RSQLite::SQLite(), pathArch)
 
 	topPlys <- RSQLite::dbGetQuery(db, "SELECT [playerid] from players")[,1]
-	isModellableSet <- currentTab[,"playerid"] %in% topPlys & notSpecSet
+	modellableSet <- currentTab[,"playerid"] %in% topPlys & notSpecSet
+	noobSet <- !(currentTab[,"playerid"] %in% topPlys) & notSpecSet
+
+	defaultVals <- list(Lifetime = .75, Tryhard = 1)
 
 	prepQ <- "SELECT [%s] from players WHERE playerid=?"
 
-	out <- lapply(c("Lifetime", "Tryhard"), function(type){
-		modtxt <- RSQLite::dbGetPreparedQuery(db,
-			sprintf(prepQ, paste0("Model.", type)),
-			as.data.frame(currentTab[,"playerid"][isModellableSet]))
-		res <- vapply(modtxt[,1], useModelText, 1, USE.NAMES = FALSE)
+	categories <- c("Lifetime", "Tryhard")
+
+	out <- lapply(categories, function(type){
+		if(any(modellableSet)){
+			modtxt <- RSQLite::dbGetPreparedQuery(db,
+				sprintf(prepQ, paste0("Model.", type)),
+				as.data.frame(currentTab[,"playerid"][modellableSet]))
+			res <- vapply(modtxt[,1], useModelText, 1, USE.NAMES = FALSE)
+		} else {
+			res <- NULL
+		}
 
 		comRes <- rep(NA, ncol(currentTab))
-		comRes[isModellableSet] <- res
+		comRes[modellableSet] <- res
+		comRes[noobSet] <- defaultVals[[type]]
+
 		return(comRes)
 	})
 
 	RSQLite::dbDisconnect(db)
+
+	names(out) <- categories
 	return(out)
 }
 
