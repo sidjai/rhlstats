@@ -239,6 +239,31 @@ getPlayerIds <- function(tabNode){
 
 }
 
+getAliases <- function(pathServer, playerId){
+	url <- paste0(
+		pathServer,
+		"/stats/hlstats.php?mode=playerinfo&player=",
+		playerId)
+
+	hlpage <- xml2::read_html(url)
+
+	baseNode <- rvest::html_node(hlpage,
+		xpath = "//div[contains(@class,'content')]/div[1]/div[1]")
+
+	check <- (9 == length(rvest::html_nodes(baseNode, xpath = "div")))
+
+	out <- ""
+	if(check){
+		aTable <- rvest::html_table(
+			rvest::html_node(baseNode, xpath = "div[9]/table"),
+			header = TRUE)
+
+		out <- aTable$Name
+	}
+
+	return(out)
+}
+
 getRidOfBadChar <- function(
 	tab,
 	addBadChar = NULL,

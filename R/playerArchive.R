@@ -36,6 +36,22 @@ buildPlayerArchive <- function(pathServer, pathArch){
 	names(sessInfo) <- tab[ ,"playerid"]
 	colnames(sessTab)[1] <- "playerid"
 
+	#Get Alliases
+
+	alInfo <- t(vapply(tab[ , "playerid"], function(x){
+		allAli <- getAliases(pathServer, x)
+		offAmt <- length(allAli) - 3
+
+		if(offAmt < 0) allAli <- c(allAli, rep("", abs(offAmt)))
+
+		return(allAli[1:3])
+
+
+	}, rep("e", 3)))
+
+	alInfo <- cbind(tab[ , "playerid"], alInfo)
+	colnames(alInfo) <- c("playerid", paste0("alias", 1:3))
+
 
 	#Add models to player archive
 
@@ -52,6 +68,7 @@ buildPlayerArchive <- function(pathServer, pathArch){
 	db <- RSQLite::dbConnect(RSQLite::SQLite(), pathArch)
 	RSQLite::dbWriteTable(db, "players", tab)
 	RSQLite::dbWriteTable(db, "session", sessTab)
+	RSQLite::dbWriteTable(db, "allias", alInfo)
 
 
 	return(RSQLite::dbDisconnect(db))

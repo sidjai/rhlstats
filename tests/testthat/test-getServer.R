@@ -57,3 +57,19 @@ test_that("Session does dead players right", {
 	expect_true(is.data.frame(timeDat))
 
 })
+
+test_that("Get aliases with players with aliases", {
+	#Bernt
+	res <- getAliases(mockServer, 398)
+	expect_true(is.character(res))
+
+
+})
+
+test_that("Get aliases when they don't have any", {
+	#Nicewithit
+	res <- getAliases(mockServer, 589)
+	expect_true(!nzchar(res))
+
+
+})
