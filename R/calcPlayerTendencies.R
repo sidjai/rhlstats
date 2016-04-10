@@ -26,11 +26,16 @@ calcPlayerTendencies <- function(sess){
 
 	model$life <- tryCatch(arima(tser, order = c(1,0,0), method = "ML"),
 		error = function(cond){
-			if(grepl("essian", cond) & nrow(sess) == 2){
-				sess <- rbind(sess, ranWalkSessRow(sess[2,]))
+			if(grepl("essian", cond)){
+				if(nrow(sess) == 2){
+					sess <- rbind(sess, ranWalkSessRow(sess[2,]))
 
-				tser <- xts::xts(sess$Time, sess$Date)
-				arima(tser, order = c(1,0,0), method = "ML")
+					tser <- xts::xts(sess$Time, sess$Date)
+					arima(tser, order = c(1,0,0), method = "ML")
+				} else if(grepl("non-finite finite", cond)){
+					arima(tser, order = c(1,0,0), method = "CSS")
+
+				}
 			} else {
 
 				message(paste(cond, "/n", sess))
@@ -42,7 +47,13 @@ calcPlayerTendencies <- function(sess){
 	avgDel <- mean(abs(sess[, "Skill.Change"]))
 	tser <- xts::xts(sess[, "Skill.Change"] / avgDel, sess[, "Date"])
 
-	model$try <- arima(tser, order = c(1,0,0), method = "ML")
+	model$try <- tryCatch(arima(tser, order = c(1,0,0), method = "ML"),
+		error = function(cond){
+			if(grepl("non-finite finite", cond)){
+				arima(tser, order = c(1,0,0), method = "CSS")
+			}
+		}
+	)
 
 	return(model)
 }

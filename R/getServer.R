@@ -15,7 +15,7 @@ getHlServerPage <- function(
 	){
 
 	url <- pathServer
-	if(!any(grepl("xml_document", class(page)))){
+	if(!any(grepl("xml_document", class(pathServer)))){
 		url <- paste0(pathServer, "/stats/hlstats.php")
 		page <- xml2::read_html(url)
 	} else {
@@ -59,10 +59,15 @@ getServerInfo <- function(hlpage){
 getServerTable <-function(hlpage){
 	nd <- rvest::html_node(hlpage, xpath = "td[1]/div[1]/table[1]")
 	res <- rvest::html_table(nd, header = TRUE)[[1]]
-	idnode <- rvest::html_nodes(hlpage, xpath = "td[1]/div[1]/table[1]/tr")
+	idnode <- rvest::html_nodes(hlpage,
+		xpath = "td[1]/div[1]/table[1]/tr[not(contains(@class, 'data-table-head'))]")
 
 	ids <- rep(NA, nrow(res))
-	ids[grepl("\\d", res[,1])] <- getPlayerIds(idnode)
+
+	preIds <- getPlayerIds(idnode)
+	specDiff <- length(preIds) - length(grep("\\d", res[,1]))
+	if(specDiff != 0) preIds <- preIds[1:length(grep("\\d", res[,1]))]
+	ids[grepl("\\d", res[,1])] <- preIds
 
 	res <- cbind(ids, res)
 	colnames(res)[1] <- "playerid"

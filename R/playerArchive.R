@@ -22,10 +22,10 @@ buildPlayerArchive <- function(pathServer, pathArch){
 
 	tab <- getHlTopPlayers(pathServer, 200)
 
-
+	pids <- tab[ ,"playerid"]
 	#Get session info for every player
 
-	sessInfo <- lapply(tab[ ,"playerid"], function(x){
+	sessInfo <- lapply(pids, function(x){
 		sess <- getSessionTimes(pathServer, x, verbose = "min")
 		sess <- cbind(rep(x, nrow(sess)), sess)
 		sess$Date <- as.character(sess$Date)
@@ -38,7 +38,7 @@ buildPlayerArchive <- function(pathServer, pathArch){
 
 	#Get Alliases
 
-	alInfo <- t(vapply(tab[ , "playerid"], function(x){
+	alInfo <- t(vapply(pids, function(x){
 		allAli <- getAliases(pathServer, x)
 		offAmt <- length(allAli) - 3
 
@@ -49,13 +49,14 @@ buildPlayerArchive <- function(pathServer, pathArch){
 
 	}, rep("e", 3)))
 
-	alInfo <- cbind(tab[ , "playerid"], alInfo)
+	alInfo <- cbind(pids, alInfo)
 	colnames(alInfo) <- c("playerid", paste0("alias", 1:3))
+	alInfo <- as.data.frame(alInfo)
 
 
 	#Add models to player archive
 
-	tend <- t(vapply(tab[ ,"playerid"], function(pid){
+	tend <- t(vapply(pids, function(pid){
 		model <- calcPlayerTendencies(sessInfo[[paste(pid)]])
 		return(c(model2str(model$life), model2str(model$try)))
 	}, rep("wer", 2)))
@@ -64,11 +65,17 @@ buildPlayerArchive <- function(pathServer, pathArch){
 	colnames(tab)[ncol(tab)-1] <- "Model.Lifetime"
 	colnames(tab)[ncol(tab)] <- "Model.Tryhard"
 
+	#Meta-info
+	metaTab <- as.data.frame(list(
+		dateUpdated = as.character(Sys.Date()),
+		codeVersion = getVersion()))
+
 
 	db <- RSQLite::dbConnect(RSQLite::SQLite(), pathArch)
 	RSQLite::dbWriteTable(db, "players", tab)
 	RSQLite::dbWriteTable(db, "session", sessTab)
-	RSQLite::dbWriteTable(db, "allias", alInfo)
+	RSQLite::dbWriteTable(db, "alias", alInfo)
+	RSQLite::dbWriteTable(db, "info", metaTab)
 
 
 	return(RSQLite::dbDisconnect(db))
@@ -128,7 +135,7 @@ queryPlayerArchive <- function(currentTab, pathArch){
 			res <- NULL
 		}
 
-		comRes <- rep(NA, ncol(currentTab))
+		comRes <- rep(NA, nrow(currentTab))
 		comRes[modellableSet] <- res
 		comRes[noobSet] <- defaultVals[[type]]
 
@@ -139,6 +146,13 @@ queryPlayerArchive <- function(currentTab, pathArch){
 
 	names(out) <- categories
 	return(out)
+}
+
+getVersion <- function(){
+	desLoc <- system.file(package = "rhlstats", "DESCRIPTION")
+	lin <- readLines(desLoc)
+	verSet <- grepl("Version", lin)
+	return(gsub("Version: ", "", desLoc[verSet]))
 }
 
 useModelText <- function(txt){
