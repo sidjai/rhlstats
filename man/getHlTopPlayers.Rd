@@ -4,15 +4,17 @@
 \alias{getHlTopPlayers}
 \title{Grab the top player lists for the first server}
 \usage{
-getHlTopPlayers(pathServer, numPlayers = 50, rankingType = c("Total",
-  "Week", "Month")[1], shJustIds = FALSE)
+getHlTopPlayers(pathServer, numPlayers = 50, rankingOrder = "skill",
+  rankingTime = c("Total", "Week", "Month")[1], shJustIds = FALSE)
 }
 \arguments{
 \item{pathServer}{The url to the main hlstats page}
 
 \item{numPlayers}{The number of players to download(grabs in 50 player pages)}
 
-\item{rankingType}{What type of ranking should the server output}
+\item{rankingOrder}{What variable should it be ranked by}
+
+\item{rankingTime}{What time period should be considered for the ranking}
 
 \item{shJustIds}{Give only the player ids of the players}
 }

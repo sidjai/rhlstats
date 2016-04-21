@@ -79,7 +79,8 @@ getServerTable <-function(hlpage){
 #'
 #' @param pathServer The url to the main hlstats page
 #' @param numPlayers The number of players to download(grabs in 50 player pages)
-#' @param rankingType What type of ranking should the server output
+#' @param rankingOrder What variable should it be ranked by
+#' @param rankingTime What time period should be considered for the ranking
 #' @param shJustIds Give only the player ids of the players
 #'
 #' @return A dataframe of the final table or a vector of the player Ids
@@ -87,17 +88,19 @@ getServerTable <-function(hlpage){
 getHlTopPlayers <- function(
 	pathServer,
 	numPlayers = 50,
-	rankingType = c("Total", "Week", "Month")[1],
+	rankingOrder = "skill",
+	rankingTime = c("Total", "Week", "Month")[1],
 	shJustIds = FALSE
 	){
 
-	rankInd <- switch(rankingType, Total = 0, Week = -1, Month = -2)
+	rankInd <- switch(rankingTime, Total = 0, Week = -1, Month = -2)
 
 	playerList <- lapply(1:ceiling(numPlayers/50), function(pg){
 		url <- sprintf(
-			"%s/stats/hlstats.php?mode=players&game=tf&rank_type=%d&page=%d",
+			"%s/stats/hlstats.php?mode=players&game=tf&rank_type=%d&sort=%s&page=%d",
 			pathServer,
 			rankInd,
+			rankingOrder,
 			pg)
 
 		hlpage <- xml2::read_html(url)
@@ -255,7 +258,7 @@ getAliases <- function(pathServer, playerId){
 	baseNode <- rvest::html_node(hlpage,
 		xpath = "//div[contains(@class,'content')]/div[1]/div[1]")
 
-	check <- (9 == length(rvest::html_nodes(baseNode, xpath = "div")))
+	check <- (9 <= length(rvest::html_nodes(baseNode, xpath = "div")))
 
 	out <- ""
 	if(check){
@@ -263,7 +266,8 @@ getAliases <- function(pathServer, playerId){
 			rvest::html_node(baseNode, xpath = "div[9]/table"),
 			header = TRUE)
 
-		out <- aTable$Name
+
+		out <- aTable[order(parseHlTime(aTable$Time), decreasing = TRUE), "Name"]
 	}
 
 	return(out)
