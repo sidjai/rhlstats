@@ -4,11 +4,12 @@
 #'
 #' @param pathServer The url to the main hlstats page
 #' @param pathArch The path where the output sql database should be
+#' @param ... Passthrough for customization 'getHlTopPlayers' or the rankings
 #'
 #' @return A logical if the sql was disconnected, side effect of writing the
 #'   database
 #' @export
-buildPlayerArchive <- function(pathServer, pathArch){
+buildPlayerArchive <- function(pathServer, pathArch, ...){
 
 	check <- length(getHlServerPage(pathServer, shOnlyNodes = TRUE)) > 0
 	if(!check) stop(paste(
@@ -20,7 +21,7 @@ buildPlayerArchive <- function(pathServer, pathArch){
 	}
 
 
-	tab <- getHlTopPlayers(pathServer, 200)
+	tab <- getHlTopPlayers(pathServer, 200, ...)
 
 	pids <- tab[ ,"playerid"]
 	#Get session info for every player

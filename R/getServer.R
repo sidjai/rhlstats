@@ -131,9 +131,11 @@ getHlTopPlayers <- function(
 			act <- gsub("width|%|:|;", "", act)
 			tab$Activity <- as.integer(act)
 
+			tab <- getRidOfBadChar(tab)
+
 			tab[, "Connection.Time"] <- parseHlTime(tab[, "Connection.Time"])
 
-			tab <- getRidOfBadChar(tab)
+
 
 			easyStrSet <- c("Points", "Kills", "Deaths", "Headshots", "Accuracy")
 			for (col in easyStrSet){

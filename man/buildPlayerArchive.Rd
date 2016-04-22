@@ -4,12 +4,14 @@
 \alias{buildPlayerArchive}
 \title{Title Builds the usage stats database}
 \usage{
-buildPlayerArchive(pathServer, pathArch)
+buildPlayerArchive(pathServer, pathArch, ...)
 }
 \arguments{
 \item{pathServer}{The url to the main hlstats page}
 
 \item{pathArch}{The path where the output sql database should be}
+
+\item{...}{Passthrough for customization 'getHlTopPlayers' or the rankings}
 }
 \value{
 A logical if the sql was disconnected, side effect of writing the
